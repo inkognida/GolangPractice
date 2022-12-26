@@ -6,69 +6,42 @@ import (
 	"strings"
 )
 
-//Time Limit Exceeded
-//func minSwaps(s string) int {
-//	count := 0
-//	str := []rune(strings.ReplaceAll(s, "[]", ""))
-//
-//	for {
-//		if strings.Contains(string(str), "[]") {
-//			str = []rune(strings.ReplaceAll(string(str), "[]", ""))
-//		} else {
-//			break
-//		}
-//	}
-//
-//	for i := 0; i < len(str)/2; i++ {
-//		count++
-//	}
-//
-//	if count%2 == 0 {
-//		return count / 2
-//	} else {
-//		return int(math.Ceil(float64(count) / 2))
-//	}
-//
-//}
-
 func minSwaps(s string) int {
 	count := 0
 	str := []rune(strings.ReplaceAll(s, "[]", ""))
 
-	//for {
-	//	if strings.Contains(string(str), "[]") {
-	//		str = []rune(strings.ReplaceAll(string(str), "[]", ""))
-	//	} else {
-	//		break
-	//	}
-	//}
+	left := 0
 
-	var flag bool
-	flag = false
+	for i := 0; i < len(str); i++ {
+		if str[i] == 91 {
+			left++
+
+		} else if str[i] != 91 && left != len(str)/2 {
+			left = -1
+			break
+		} else if str[i] != 91 && left == len(str)/2 {
+			return count
+		}
+	}
+
+	if left != -1 {
+		for i := 0; i < len(str)/4; i++ {
+			count++
+		}
+
+		return count
+	}
 
 	for {
 		if strings.Contains(string(str), "[]") {
-			flag = true
-			for i := 0; i < len(str)-1; i++ {
-				if str[i] == 91 && str[i+1] == 93 {
-					str = append(str[0:i-1], str[0:i+1]...)
-				}
-			}
+			str = []rune(strings.ReplaceAll(string(str), "[]", ""))
 		} else {
 			break
 		}
 	}
 
-	fmt.Println(string(str))
-
-	if flag == false {
-		for i := 0; i < len(str)/2; i++ {
-			count++
-		}
-	} else {
-		for i := 0; i < len(str); i++ {
-			count++
-		}
+	for i := 0; i < len(str)/2; i++ {
+		count++
 	}
 
 	if count%2 == 0 {
@@ -79,25 +52,27 @@ func minSwaps(s string) int {
 }
 
 func main() {
-	s := "]]][[["
+
+	s := "[[[[]]]]"
+	//s_ := strings.Repeat("[", 500000)
+	//s__ := strings.Repeat("]", 500000)
+
 	r := minSwaps(s)
 
 	fmt.Println(r)
 }
 
-// ]]][[[
-// ][][
-//
-// ]][[
+// len(str)/2
+
+// [[[]]]
 // [][]
-// []][][
-// for if v == [
-// less++
-// else
-// less--
-// if les <0
+// [[[[ [] ]]]]
+// [[[ [] ]]] 1
+// [ [] [] [] ]
+// [ ] [ ] [] [ ] [ ] 2
 // unb++
 // less=0
 //
 // if swap and 2 pairs = succeed else go next
 //
+// [[]]

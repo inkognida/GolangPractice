@@ -356,25 +356,133 @@ func longestObstacleCourseAtEachPosition_(obstacles []int) []int {
 	answer := make([]int, len(obstacles))
 
 	for i, obstacle := range obstacles {
+		fmt.Println(obstacle)
 		if len(stack) == 0 || obstacle >= stack[len(stack)-1] {
+
 			stack = append(stack, obstacle)
 			answer[i] = len(stack)
+			fmt.Println("stack cont", stack, i, obstacle)
+
 			continue
 		}
 		index := sort.Search(len(stack), func(j int) bool {
 			return stack[j] > obstacle
 		})
-		fmt.Println(index, stack, answer)
+		fmt.Println("index", stack, "index:", index, i)
+
 		answer[i] = index + 1
 		stack[index] = obstacle
-		fmt.Println(index, stack, answer)
+
+		fmt.Println("stack", stack, i)
 	}
 	return answer
 }
 
+// 5 s = [5], a = [1]
+// 1 s = [1], a = [1]
+// 5 s = [1,5], a = [2]
+// 5 s = [1,5,5], a = [3]
+// 1 s = []
+
 func main() {
 
-	r := longestObstacleCourseAtEachPosition_([]int{1, 2, 3, 2}) //[1 1 2 3 2 3 4 5 3 4] (5)
+	r := longestObstacleCourseAtEachPosition_([]int{5, 1, 5, 5, 1, 3, 4, 5, 1, 4}) //[1 1 2 3 2 3 4 5 3 4] (5)
 
 	fmt.Println("R:", r) //LDS([]int{4, 1, 5, 4, 3, 1, 5, 5, 1, 5})
+
+	//arr := []int{5, 1, 5, 5, 1, 3, 4, 5, 1, 4} //[1,1,2,3,2,3,4,5,3,5]
+	//var ans []int
+	//
+	//for i := 0; i < len(arr); i++ {
+	//	tmp := make([]int, len(arr[:i+1]))
+	//	copy(tmp, arr[:i+1])
+	//	reverseSlice(&tmp)
+	//
+	//	var sol []int
+	//
+	//	for _, v := range tmp {
+	//
+	//		if len(sol) == 0 || sol[len(sol)-1] >= v {
+	//			fmt.Println("if", tmp, sol, v)
+	//			sol = append(sol, v)
+	//			continue
+	//		}
+	//		fmt.Println("after continue", tmp, sol, v)
+	//
+	//		idx := sort.Search(len(tmp), func(j int) bool {
+	//			return tmp[j] <= v
+	//		})
+	//
+	//		fmt.Println("IDX", idx, v)
+	//		if v > sol[len(sol)-1] {
+	//			continue
+	//		} else {
+	//			fmt.Println("else", sol)
+	//			sol = append(sol, tmp[idx])
+	//		}
+	//		fmt.Println("Biba", tmp, v, sol)
+	//
+	//	}
+	//	fmt.Println("solution", sol)
+	//	ans = append(ans, len(sol))
+	//}
+	//fmt.Println(ans)
+
+	//tmp := []int{2, 3, 2, 1}
+	//
+	//idx := sort.Search(len(tmp), func(j int) bool {
+	//	return tmp[j] < 3
+	//})
+	//fmt.Println(idx, ans, tmp[idx])
+
+	//var sol []int
+	//for _, v := range tmp {
+	//
+	//	if len(sol) == 0 || sol[len(sol)-1] >= v {
+	//		sol = append(sol, v)
+	//		continue
+	//	}
+	//	fmt.Println("after continue", tmp, sol, v)
+	//
+	//	idx := sort.Search(len(tmp), func(j int) bool {
+	//		return tmp[j] <= v
+	//	})
+	//
+	//	fmt.Println("IDX", idx, v, tmp)
+	//	if idx == len(tmp) {
+	//		break
+	//	} else {
+	//		fmt.Println("else", sol)
+	//		sol = append(sol, tmp[idx])
+	//	}
+	//	fmt.Println("Biba", tmp, v, sol)
+	//
+	//}
+	//fmt.Println("solution", sol)
+	//fmt.Println(ans)
+
 }
+
+/*
+class Solution {
+public:
+    vector<int> longestObstacleCourseAtEachPosition(vector<int>& nums) {
+
+        int n = nums.size();
+        // lis store elements of longest increasing subsequence till ith
+        vector<int> lis;
+        // ans[i] store, no of elements satisfying the condition including ith
+        vector<int> ans;
+        for(int i = 0; i < n; i++)
+        {
+            int idx = upper_bound(lis.begin(), lis.end(), nums[i]) - lis.begin();
+            ans.push_back(idx + 1);
+            if(idx == lis.size())
+                lis.push_back(nums[i]);
+            else
+                lis[idx] = nums[i];
+        }
+        return ans;
+    }
+};
+*/

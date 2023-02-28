@@ -29,5 +29,5 @@ func main() {
 	out := sq(c)
 
 	fmt.Println(<-out) // 4
-	fmt.Println(<-out) // 9
+	//fmt.Println(<-out) // 9
 }

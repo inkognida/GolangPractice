@@ -13,25 +13,29 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		for {
-			v, ok := <-unbuffered
-			if !ok {
-				fmt.Println("stop reader")
-				return
-			}
 
-			fmt.Println(v)
+		i := 0
+		for {
+			//time.Sleep(time.Microsecond * 1)
+			print("write to\n")
+
+			unbuffered <- fmt.Sprintf("Hello #%d", i)
+			i++
 		}
+		close(unbuffered)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		for i := 0; i <= 9; i++ {
-			unbuffered <- fmt.Sprintf("Hello #%d", i)
+		for {
+			v, ok := <-unbuffered
+			if !ok {
+				fmt.Println("stop reader")
+				//return
+			}
+			print(v, "\n")
 		}
-
-		close(unbuffered)
 	}()
 
 	wg.Wait()

@@ -11,3 +11,8 @@ type Queries struct {
 func New(pgxPool *pgxpool.Pool) *Queries {
 	return &Queries{pool: pgxPool}
 }
+
+//
+//func (q *Queries) GetNick() string {
+//	return "aboba"
+//}

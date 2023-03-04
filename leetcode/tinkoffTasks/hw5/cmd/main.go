@@ -4,24 +4,28 @@ import (
 	"context"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/sirupsen/logrus"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+	"tinkoffTasks/hw5/internal/handlers"
+	"tinkoffTasks/hw5/internal/repositories"
+	"tinkoffTasks/hw5/internal/services"
 )
 
-func GetHello(w http.ResponseWriter, r *http.Request) {
-	_, _ = w.Write([]byte("Hello"))
-}
+func newServer(addr string, logger *logrus.Logger) *http.Server {
+	usersRepo := repositories.NewUsersRepository(logger)
+	usersService := services.NewUsersService(usersRepo, logger)
 
-func newServer(addr string) *http.Server {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 
-	r.Get("/hello", GetHello)
+	userHandler := handlers.NewUsersHandler(usersService, logger)
+	r.Mount("/users", userHandler.Routes())
 
 	return &http.Server{
 		Handler: r,
@@ -29,8 +33,8 @@ func newServer(addr string) *http.Server {
 	}
 }
 
-func execute(addr string) (<-chan error, error) {
-	srv := newServer(addr)
+func execute(addr string, logger *logrus.Logger) (<-chan error, error) {
+	srv := newServer(addr, logger)
 
 	// Grateful shutdown
 	errC := make(chan error, 1)
@@ -72,7 +76,9 @@ func execute(addr string) (<-chan error, error) {
 }
 
 func main() {
-	errC, err := execute(":5000")
+	logger := logrus.New()
+
+	errC, err := execute(":5000", logger)
 	if err != nil {
 		log.Fatalln("Can't run")
 	}

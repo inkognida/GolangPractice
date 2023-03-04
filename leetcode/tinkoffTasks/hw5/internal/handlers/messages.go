@@ -12,7 +12,9 @@ import (
 )
 
 const (
-	userIdCtx = "userID"
+	userIdCtx    = "userID"
+	badAuthToken = "Can't use auth token to get UserID"
+	shared       = "shared"
 )
 
 type MessageService interface {
@@ -88,8 +90,34 @@ func (handler *MessagesHandler) getMessages(w http.ResponseWriter, r *http.Reque
 	}
 	getMessage.Limit = limitInt
 
+	messages, err := handler.messageService.GetMessages(getMessage)
+	if err != nil {
+		response.Respond(w, http.StatusBadRequest, dto.Error{Message: err.Error()})
+		return
+	}
+
+	response.Respond(w, http.StatusOK, messages)
 }
 
 func (handler *MessagesHandler) postMessages(w http.ResponseWriter, r *http.Request) {
+	postMessage := dto.PostMessage{}
+	sender, ok := r.Context().Value(userIdCtx).(string)
+	if !ok {
+		response.Respond(w, http.StatusInternalServerError, dto.Error{Message: badAuthToken})
+		return
+	}
+	postMessage.SenderID = sender
+
+	recipient := chi.URLParam(r, "userId")
+	if recipient == "" {
+		postMessage.RecipientID = shared
+	} else {
+		postMessage.RecipientID = recipient
+	}
+
+	err := handler.messageService.PostMessage(postMessage)
+	if err != nil {
+		response.Respond(w, http.StatusInternalServerError)
+	}
 
 }

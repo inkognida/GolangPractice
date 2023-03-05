@@ -36,7 +36,6 @@ func (repo *UsersRepository) AddUser(login string, password string) (domain.User
 			return domain.User{}, fmt.Errorf("%s", userExists)
 		}
 	}
-
 	repo.usersMutex.RUnlock()
 
 	user := domain.User{
@@ -52,60 +51,62 @@ func (repo *UsersRepository) AddUser(login string, password string) (domain.User
 	return user, nil
 }
 
-func (repo *UsersRepository) AddUserToken(login string, token string) domain.User {
+func (repo *UsersRepository) UserWithToken(login string, token string) (domain.User, error) {
 	repo.usersMutex.RLock()
 	for i := 0; i < len(repo.users); i++ {
 		if repo.users[i].Login == login {
 			tmp := &repo.users[i]
 			tmp.Token = token
-			return repo.users[i]
+			repo.usersMutex.RUnlock()
+			return repo.users[i], nil
 		}
 	}
-	repo.usersMutex.RUnlock()
 
-	// TODO analyze
-	return domain.User{}
+	repo.usersMutex.RUnlock()
+	return domain.User{}, fmt.Errorf("%s", noSuchUser)
 }
 
 func (repo *UsersRepository) GetUser(login string) (domain.User, error) {
 	repo.usersMutex.RLock()
-	defer repo.usersMutex.RUnlock()
 
 	for _, user := range repo.users {
 		if user.Login == login {
+			repo.usersMutex.RUnlock()
 			return user, nil
 		}
 	}
 
+	repo.usersMutex.RUnlock()
 	return domain.User{}, fmt.Errorf("%s", noSuchUser)
 }
 
 func (repo *UsersRepository) UserLogout(token string) error {
-	// TODO check mutex
 	repo.usersMutex.RLock()
-	defer repo.usersMutex.RUnlock()
 
 	for i := 0; i < len(repo.users); i++ {
 		if repo.users[i].Token == token {
 			repo.usersMutex.Lock()
 			repo.users = append(repo.users[:i], repo.users[i+1:]...)
 			repo.usersMutex.Unlock()
+			repo.usersMutex.RUnlock()
 			return nil
 		}
 	}
 
+	repo.usersMutex.RUnlock()
 	return fmt.Errorf("%s", noSuchUserToken)
 }
 
 func (repo *UsersRepository) CheckAuth(token string) (string, error) {
 	repo.usersMutex.RLock()
-	defer repo.usersMutex.RUnlock()
 
 	for _, user := range repo.users {
 		if user.Token == token {
+			repo.usersMutex.RUnlock()
 			return user.ID, nil
 		}
 	}
 
+	repo.usersMutex.RUnlock()
 	return "", fmt.Errorf("%s", noSuchUserToken)
 }

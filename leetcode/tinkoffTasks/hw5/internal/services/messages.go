@@ -11,6 +11,11 @@ const (
 	shared = "shared"
 )
 
+type MessagesRepository interface {
+	PostMessage(message domain.Message) error
+	GetMessages(message dto.GetMessage) ([]domain.Message, error)
+}
+
 type MessagesService struct {
 	logger       *logrus.Logger
 	messagesRepo MessagesRepository
@@ -24,27 +29,15 @@ func NewMessagesService(repository MessagesRepository, logger *logrus.Logger) *M
 }
 
 func (service *MessagesService) GetMessages(message dto.GetMessage) ([]domain.Message, error) {
-	out := make([]domain.Message, 0)
-	var err error
-
-	if message.SenderID == shared {
-		out, err = service.messagesRepo.GetSharedMessages(message)
-		if err != nil {
-			return []domain.Message{}, err
-		}
-
-		return out, nil
-	} else {
-		out, err = service.messagesRepo.GetPrivateMessages(message)
-		if err != nil {
-			return []domain.Message{}, err
-		}
-
-		return out, nil
+	out, err := service.messagesRepo.GetMessages(message)
+	if err != nil {
+		return []domain.Message{}, err
 	}
+
+	return out, nil
 }
 
-func (service *MessagesService) PostMessage(message dto.PostMessage) error {
+func (service *MessagesService) PostMessage(message domain.Message) error {
 	addMessage := domain.Message{
 		SenderID:    message.SenderID,
 		RecipientID: message.RecipientID,

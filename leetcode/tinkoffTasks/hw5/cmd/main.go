@@ -20,12 +20,18 @@ func newServer(addr string, logger *logrus.Logger) *http.Server {
 	usersRepo := repositories.NewUsersRepository(logger)
 	usersService := services.NewUsersService(usersRepo, logger)
 
+	messagesRepo := repositories.NewMessagesRepository(logger)
+	messagesService := services.NewMessagesService(messagesRepo, logger)
+
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 
 	userHandler := handlers.NewUsersHandler(usersService, logger)
 	r.Mount("/users", userHandler.Routes())
+
+	messageHandler := handlers.NewMessagesHandler(messagesService, usersService, logger)
+	r.Mount("/messages", messageHandler.Routes())
 
 	return &http.Server{
 		Handler: r,
@@ -83,6 +89,6 @@ func main() {
 		log.Fatalln("Can't run")
 	}
 	if err := <-errC; err != nil {
-		log.Fatalln("Error while execution")
+		log.Fatalln("Error while execution", err)
 	}
 }

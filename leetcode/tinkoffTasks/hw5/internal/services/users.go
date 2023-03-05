@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"tinkoffTasks/hw5/internal/domain"
 	"tinkoffTasks/hw5/internal/dto"
 	"tinkoffTasks/hw5/pkg/auth"
 )
@@ -10,6 +11,14 @@ import (
 const (
 	wrongPassword = "Wrong password for this user"
 )
+
+type UsersRepository interface {
+	AddUser(login string, passcode string) (domain.User, error)
+	UserWithToken(login string, token string) (domain.User, error)
+	GetUser(login string) (domain.User, error)
+	UserLogout(token string) error
+	CheckAuth(token string) (string, error)
+}
 
 type UserService struct {
 	userRepo UsersRepository
@@ -56,7 +65,10 @@ func (service *UserService) Login(login dto.Register) (dto.User, error) {
 		return dto.User{}, err
 	}
 
-	user = service.userRepo.AddUserToken(login.Login, token)
+	user, err = service.userRepo.UserWithToken(login.Login, token)
+	if err != nil {
+		return dto.User{}, err
+	}
 
 	return dto.User{
 		ID:    user.ID,

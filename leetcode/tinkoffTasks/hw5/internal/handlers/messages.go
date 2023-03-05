@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/go-chi/chi/v5"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -19,7 +20,7 @@ const (
 
 type MessageService interface {
 	GetMessages(message dto.GetMessage) ([]domain.Message, error)
-	PostMessage(message dto.PostMessage) error
+	PostMessage(message domain.Message) error
 }
 
 type MessagesHandler struct {
@@ -44,6 +45,9 @@ func (handler *MessagesHandler) Routes() chi.Router {
 	r.Get("/", handler.getMessages)
 	r.Post("/", handler.postMessages)
 
+	r.Get("/{userId}", handler.getMessages)
+	r.Post("/{userId}", handler.postMessages)
+
 	return r
 }
 
@@ -64,35 +68,47 @@ func (handler *MessagesHandler) authMiddleware(next http.Handler) http.Handler {
 }
 
 func (handler *MessagesHandler) getMessages(w http.ResponseWriter, r *http.Request) {
-	getMessage := dto.GetMessage{}
-
-	offset := r.URL.Query().Get("offset")
-	if offset == "" {
-		offset = "0"
+	offsetTmp := r.URL.Query().Get("offset")
+	if offsetTmp == "" {
+		offsetTmp = "0"
 	}
-
-	offsetInt, err := strconv.Atoi(offset)
+	offset, err := strconv.Atoi(offsetTmp)
 	if err != nil {
 		response.Respond(w, http.StatusBadRequest, dto.Error{Message: err.Error()})
 		return
 	}
-	getMessage.Offset = offsetInt
 
-	limit := r.URL.Query().Get("limit")
-	if limit == "" {
-		limit = "10"
+	limitTmp := r.URL.Query().Get("limit")
+	if limitTmp == "" {
+		limitTmp = "10"
 	}
-
-	limitInt, err := strconv.Atoi(limit)
+	limit, err := strconv.Atoi(limitTmp)
 	if err != nil {
 		response.Respond(w, http.StatusBadRequest, dto.Error{Message: err.Error()})
 		return
 	}
-	getMessage.Limit = limitInt
+	senderID, ok := r.Context().Value(userIdCtx).(string)
+	if !ok {
+		response.Respond(w, http.StatusBadRequest, dto.Error{Message: badAuthToken})
+		return
+	}
+
+	// TODO check URLParam (recipientID)
+	recipientID := chi.URLParam(r, "userId")
+	if recipientID == "" {
+		recipientID = shared
+	}
+
+	getMessage := dto.GetMessage{
+		SenderID:    senderID,
+		RecipientID: recipientID,
+		Limit:       limit,
+		Offset:      offset,
+	}
 
 	messages, err := handler.messageService.GetMessages(getMessage)
 	if err != nil {
-		response.Respond(w, http.StatusBadRequest, dto.Error{Message: err.Error()})
+		response.Respond(w, http.StatusNotFound, dto.Error{Message: err.Error()})
 		return
 	}
 
@@ -100,24 +116,32 @@ func (handler *MessagesHandler) getMessages(w http.ResponseWriter, r *http.Reque
 }
 
 func (handler *MessagesHandler) postMessages(w http.ResponseWriter, r *http.Request) {
-	postMessage := dto.PostMessage{}
-	sender, ok := r.Context().Value(userIdCtx).(string)
+	senderID, ok := r.Context().Value(userIdCtx).(string)
 	if !ok {
 		response.Respond(w, http.StatusInternalServerError, dto.Error{Message: badAuthToken})
 		return
 	}
-	postMessage.SenderID = sender
+	recipientID := chi.URLParam(r, "userId")
+	if recipientID == "" {
+		recipientID = shared
+	}
+	msg := dto.PostMessage{}
+	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
+		response.Respond(w, http.StatusBadRequest, dto.Error{Message: wrongBody})
+		return
+	}
 
-	recipient := chi.URLParam(r, "userId")
-	if recipient == "" {
-		postMessage.RecipientID = shared
-	} else {
-		postMessage.RecipientID = recipient
+	postMessage := domain.Message{
+		SenderID:    senderID,
+		RecipientID: recipientID,
+		Msg:         msg.Msg,
 	}
 
 	err := handler.messageService.PostMessage(postMessage)
 	if err != nil {
-		response.Respond(w, http.StatusInternalServerError)
+		response.Respond(w, http.StatusInternalServerError, dto.Error{Message: err.Error()})
+		return
 	}
 
+	response.Respond(w, http.StatusOK, nil)
 }

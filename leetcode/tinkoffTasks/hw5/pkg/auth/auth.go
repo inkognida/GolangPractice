@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-//TODO add secret to .env
 var (
 	SecretKey = []byte("kk")
 )

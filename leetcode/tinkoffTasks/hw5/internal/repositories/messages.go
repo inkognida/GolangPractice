@@ -9,8 +9,7 @@ import (
 )
 
 const (
-	shared           = "shared"
-	noSharedMessages = "There is no messages in shared chat"
+	noMessages = "There is no messages for you"
 )
 
 type MessagesRepository struct {
@@ -27,34 +26,19 @@ func NewMessagesRepository(logger *logrus.Logger) *MessagesRepository {
 	}
 }
 
-func (repo *MessagesRepository) GetSharedMessages(message dto.GetMessage) ([]domain.Message, error) {
+func (repo *MessagesRepository) GetMessages(message dto.GetMessage) ([]domain.Message, error) {
 	out := make([]domain.Message, 0)
 	repo.messagesMutex.RLock()
 	defer repo.messagesMutex.RUnlock()
 
 	for i := message.Offset; i < message.Offset+message.Limit && i < len(repo.messages); i++ {
-		if repo.messages[i].RecipientID == shared {
+		if repo.messages[i].RecipientID == message.RecipientID {
 			out = append(out, repo.messages[i])
 		}
 	}
 
 	if len(out) == 0 {
-		return []domain.Message{}, fmt.Errorf("%s", noSharedMessages)
-	}
-
-	return out, nil
-}
-
-func (repo *MessagesRepository) GetPrivateMessages(message dto.GetMessage) ([]domain.Message, error) {
-	out := make([]domain.Message, 0)
-	repo.messagesMutex.RLock()
-	defer repo.messagesMutex.RUnlock()
-
-	for i := message.Offset; i < message.Offset+message.Limit && i < len(repo.messages); i++ {
-		if repo.messages[i].SenderID == message.SenderID &&
-			repo.messages[i].RecipientID == message.RecipientID { //TODO check || condition
-			out = append(out, repo.messages[i])
-		}
+		return []domain.Message{}, fmt.Errorf("%s", noMessages)
 	}
 
 	return out, nil
@@ -66,9 +50,4 @@ func (repo *MessagesRepository) PostMessage(message domain.Message) error {
 	repo.messagesMutex.Unlock()
 
 	return nil
-}
-
-func (repo *MessagesRepository) CheckAuth(token string) error {
-	repo.messagesMutex.RLock()
-	for _,
 }

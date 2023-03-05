@@ -1,9 +1,7 @@
-SRC = ./cmd/main.go
+build:
+	go build -v ./cmd/main.go
 
-NAME = srv_chat
+run:
+	go run -v ./cmd
 
-all:
-	go build -o $(NAME) $(SRC) && ./$(NAME)
-
-fclean:
-	rm -f $(NAME)
+.DEFAULT_GOAL := build

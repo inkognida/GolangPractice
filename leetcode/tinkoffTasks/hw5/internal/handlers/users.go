@@ -13,6 +13,13 @@ const (
 	wrongBody = "wrong body request"
 )
 
+type UserService interface {
+	Register(registration dto.Register) (dto.User, error)
+	Login(login dto.Register) (dto.User, error)
+	Logout(token string) error
+	CheckAuth(token string) (string, error)
+}
+
 type UsersHandler struct {
 	usersService UserService
 	logger       *logrus.Logger

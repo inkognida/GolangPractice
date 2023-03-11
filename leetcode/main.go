@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -63,9 +64,16 @@ func main() {
 	println(ex, sas)
 
 	println(applyer("Go", upper, doubler))
+	atoi, err := strconv.Atoi("")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("atoi: ", atoi)
+
 }
 
-
+/*
 package main
 
 import "fmt"
@@ -124,4 +132,4 @@ func main() {
 	sandglass()
 	sandglass(getSandglassChar('@'), getSandglassColor(33))
 	sandglass(getSandglassSize(16))
-}
+} */

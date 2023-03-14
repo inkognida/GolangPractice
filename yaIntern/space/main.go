@@ -1,66 +1,101 @@
 package main
 
 import (
-	"bytes"
+	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
-	"strings"
 )
 
+func readInt(scanner *bufio.Scanner) int {
+	scanner.Scan()
+	val, _ := strconv.Atoi(scanner.Text())
+	return val
+}
+
 func main() {
-	var in []byte
-	var e error
-	file, _ := os.Open("input.txt")
-	in, _ = ioutil.ReadAll(file)
-	if e != nil {
-		in, _ = ioutil.ReadAll(os.Stdin)
+	f, _ := os.Open("input.txt")
+	scanner := bufio.NewScanner(f)
+	scanner.Split(bufio.ScanWords)
+
+	countN := readInt(scanner)
+	minInc := make(map[int]int, countN)
+	hie := make([]int, 0)
+	minIncOutHie := make([]int, 0)
+	childBos := make(map[int]struct{}, countN)
+
+	minhi := 0
+	minnoHi := 0
+	for i := 0; i < countN; i++ {
+		minInc[i+1] = readInt(scanner)
 	}
-	// TODO IMPLEMENT IT IN BYTES
-	lines := bytes.Split(in, []byte("\n"))
-	countN, _ := strconv.ParseInt(string(lines[0]), 10, 16)
-	minInc_ := strings.Fields(string(lines[1]))
-	hi_ := strings.Fields(string(lines[2]))
-	childB_ := strings.Fields(string(lines[3]))
-	minInc := make([]int64, countN)
-	hie := make([]int64, countN)
-	childBos := make([]int64, countN)
-	for i := int64(0); i < countN; i++ {
-		mi, _ := strconv.ParseInt(minInc_[i], 10, 16)
-		minInc[i] = mi
-		h, _ := strconv.ParseInt(hi_[i], 10, 16)
-		hie[i] = h
-		cb, _ := strconv.ParseInt(childB_[i], 10, 16)
-		childBos[i] = cb
+	for i := 0; i < countN; i++ {
+		h := readInt(scanner)
+		if h != 0 {
+			if minhi == 0 {
+				minhi = i + 1
+			}
+			hie = append(hie, i+1)
+		} else {
+			if minnoHi == 0 {
+				minnoHi = i + 1
+			}
+			minIncOutHie = append(minIncOutHie, i+1)
+		}
 	}
-	matesCount, _ := strconv.ParseInt(string(lines[4]), 10, 16)
-	matesInc_ := strings.Fields(string(lines[5]))
-	matesH_ := strings.Fields(string(lines[6]))
-	matesBo_ := strings.Fields(string(lines[7]))
-	matesInc := make([]int64, matesCount)
-	matesHi := make([]int64, matesCount)
-	matesBos := make([]int64, matesCount)
-	for i := int64(0); i < matesCount; i++ {
-		mi, _ := strconv.ParseInt(matesInc_[i], 10, 16)
-		matesInc[i] = mi
-		mh, _ := strconv.ParseInt(matesH_[i], 10, 16)
-		matesHi[i] = mh
-		mb, _ := strconv.ParseInt(matesBo_[i], 10, 16)
-		matesBos[i] = mb
+	for i := 0; i < countN; i++ {
+		cb := readInt(scanner)
+		if cb != 0 {
+			childBos[i+1] = struct{}{}
+		}
 	}
-	res := make([]int64, matesCount)
+	matesCount := readInt(scanner)
+	matesInc := make([]int, matesCount)
+	matesHi := make([]int, matesCount)
+	matesBos := make([]int, matesCount)
+
+	for i := 0; i < matesCount; i++ {
+		matesInc[i] = readInt(scanner)
+	}
+	for i := 0; i < matesCount; i++ {
+		matesHi[i] = readInt(scanner)
+	}
+	for i := 0; i < matesCount; i++ {
+		matesBos[i] = readInt(scanner)
+	}
+
+	res := make([]int, matesCount)
 Main:
-	for i := int64(0); i < matesCount; i++ {
-		for j := int64(0); j < countN; j++ {
-			if (childBos[j] == 1 && matesBos[i] == j+1) || (matesInc[i] >= minInc[j] && matesHi[i] >= hie[j]) {
-				res[i] = j + 1
+	for i := 0; i < matesCount; i++ {
+		if _, ok := childBos[matesBos[i]]; ok {
+			res[i] = matesBos[i]
+			if res[i] < minhi && res[i] < minnoHi {
 				continue Main
 			}
 		}
-		res[i] = 0
+		for j := 0; j < len(hie); j++ {
+			if matesHi[i] == 1 {
+				id := hie[j]
+				if minInc[id] <= matesInc[i] && (id < res[i] || res[i] == 0) {
+					res[i] = id
+					break
+				}
+			}
+		}
+		if res[i] < minnoHi && res[i] != 0 {
+			continue Main
+		}
+
+		for j := 0; j < len(minIncOutHie); j++ {
+			id := minIncOutHie[j]
+			v := minInc[id]
+			if v <= matesInc[i] && (id < res[i] || res[i] == 0) {
+				res[i] = id
+				break
+			}
+		}
 	}
-	for i := int64(0); i < matesCount-1; i++ {
+	for i := 0; i < matesCount-1; i++ {
 		fmt.Print(res[i], " ")
 	}
 	fmt.Println(res[matesCount-1])

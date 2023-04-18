@@ -64,47 +64,26 @@ func totalNodes(root *Node) int {
 }
 
 // third task
-func subSlice(nums []int) int {
-	nm := make(map[int]struct{}, len(nums))
-	max := 0
-	//Main:
-	//	for i := 0; i < len(nums); i++ {
-	//		nm = make(map[int]struct{}, len(nums))
-	//		nm[nums[i]] = struct{}{}
-	//
-	//		for j := i + 1; j < len(nums); j++ {
-	//			fmt.Println(nm, nums[j])
-	//			if _, ok := nm[nums[j]]; !ok {
-	//				nm[nums[j]] = struct{}{}
-	//			} else {
-	//				if len(nm) > max {
-	//					max = len(nm)
-	//					continue Main
-	//				}
-	//			}
-	//		}
-	//		if len(nm) > max {
-	//			max = len(nm)
-	//			continue Main
-	//		}
-	//	}
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
 
-	for i, v := range nums {
-		if _, ok := nm[v]; !ok {
-			nm[v] = struct{}{}
-			if i == len(nums)-1 && len(nm) > max {
-				max = len(nm)
-			}
-		} else {
-			if len(nm) > max {
-				max = len(nm)
-				nm = make(map[int]struct{}, 0)
-				nm[v] = struct{}{}
-			}
-		}
+func subSlice(nums []int) int {
+	l := 0
+	prev := 0
+	mp := make(map[int]int, 0)
+	for i := 0; i < len(nums); i++ {
+		fmt.Println(mp, prev, l)
+		prev = max(prev, mp[nums[i]])
+		l = max(l, i-prev+1)
+		mp[nums[i]] = i + 1
+
 	}
 
-	return max
+	return l
 }
 
 func main() {
@@ -138,5 +117,7 @@ func main() {
 	ch := make(chan int, totalNodes(t.Root))
 	fmt.Println(sumTree(t, ch))
 
-	fmt.Println(subSlice([]int{1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 10}))
+	fmt.Println(subSlice([]int{1, 2, 3, 4, 4, 5, 5, 5, 6, 7, 8, 9, 10}))
+	fmt.Println(subSlice([]int{5, 9, 1, 2, 3, 9, 7, 8, 5, 4, 6, 0, 9, 5, 3}))
+
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -14,38 +13,6 @@ func SplitBySeparator(s string, sep rune) []string {
 	return strings.FieldsFunc(s, func(r rune) bool {
 		return r == sep
 	})
-}
-
-func maxDiff(a []int) int {
-	max := 0
-	for i := 0; i < len(a)-1; i++ {
-		diff := abs(a[i+1] - a[i])
-		if diff > max {
-			max = diff
-		}
-	}
-	return max
-}
-
-func abs(x int) int {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
-func compareSlices(slice1 []int, slice2 []int) bool {
-	if len(slice1) != len(slice2) {
-		return false
-	}
-
-	for i := 0; i < len(slice1); i++ {
-		if slice1[i] != slice2[i] {
-			return false
-		}
-	}
-
-	return true
 }
 
 func main() {
@@ -65,75 +32,79 @@ func main() {
 	p := SplitBySeparator(strings.TrimSpace(prLine), ' ')
 
 	prices := make([]int, ds)
-
-	j := 0
-	in := make(map[int][][]int, len(p)-3)
-
 	for i, v := range p {
 		pv, _ := strconv.Atoi(v)
 		prices[i] = pv
+	}
 
-		if j < len(p)-3 {
-			in[j+1] = make([][]int, 2)
-			in[j+1][0] = make([]int, 4)
-			in[j+1][0] = []int{i, i + 1, i + 2, i + 3}
-			j++
+	md1 := 0
+	md2 := 0
+
+	st := make([][]int, 2)
+	st[0] = make([]int, 4)
+	st[1] = make([]int, 4)
+	for i := 0; i < ds-3; i++ {
+		for j := i + 1; j < ds-2; j++ {
+			for k := j + 1; k < ds-1; k++ {
+				for l := k + 1; l < ds; l++ {
+					d1 := prices[j] - prices[i]
+					d2 := prices[l] - prices[k]
+					if d1 > md1 && i < j && j < k && k < l {
+						md1 = d1
+						st[0][0] = prices[i]
+						st[0][1] = prices[j]
+
+						st[1][0] = i + 1
+						st[1][1] = j + 1
+					}
+					if d2 > md2 && i < j && j < k && k < l {
+						md2 = d2
+						st[0][2] = prices[k]
+						st[0][3] = prices[l]
+
+						st[1][2] = k + 1
+						st[1][3] = l + 1
+					}
+				}
+			}
 		}
-
+	}
+	r0 := float64(1)
+	b1, b1i := 0, 0
+	s1, s1i := 0, 0
+	if st[0][1]-st[0][0] > st[0][3]-st[0][2] {
+		b1, b1i = st[0][0], st[1][0]
+		s1, s1i = st[0][1], st[1][1]
+	} else {
+		b1, b1i = st[0][2], st[1][2]
+		s1, s1i = st[0][3], st[1][3]
 	}
 
-	act := make([][]int, len(p)-3)
+	r1 := float64(1) / float64(b1) * float64(s1)
+	r2 := r0 / float64(st[0][0]) * float64(st[0][1]) / float64(st[0][2]) * float64(st[0][3])
 
-	fmt.Println(in)
-
-	for i := range act {
-		act[i] = make([]int, 4)
-		copy(act[i], prices[i:i+4])
-
-		in[i+1][1] = make([]int, 4)
-		in[i+1][1] = act[i]
+	if math.IsNaN(r1) {
+		r1 = float64(0)
+	} else if math.IsNaN(r2) {
+		r2 = float64(0)
 	}
-
-	sort.Slice(act, func(i, j int) bool {
-		diff1 := maxDiff(act[i])
-		diff2 := maxDiff(act[j])
-		return diff1 > diff2
-	})
-
-	active := act[0]
-
-	s0 := float64(1)
-	s11 := float64(1) / float64(active[0]) * float64(active[1])
-	s12 := float64(1) / float64(active[2]) * float64(active[3])
-	s2 := s11 / float64(active[2]) * float64(active[3])
-
-	max := math.Max(math.Max(s0, s11), math.Max(s12, s2))
+	max := math.Max(math.Max(r0, r1), r2)
+	//fmt.Println(r0, r1, r2, max, st)
 
 	switch max {
-	case s0:
-		fmt.Println(0)
-	case s11:
-		fmt.Println(1)
-		for _, mv := range in {
-			if compareSlices(mv[1], active) {
-				fmt.Println(mv[0])
-			}
-		}
 
-	case s12:
-		fmt.Println(1)
-		for _, mv := range in {
-			if compareSlices(mv[1], active) {
-				fmt.Println(mv[0])
-			}
-		}
-	case s2:
+	case r2:
 		fmt.Println(2)
-		for _, mv := range in {
-			if compareSlices(mv[1], active) {
-				fmt.Println(mv[0], mv[1])
+		fmt.Println(st[1][0], st[1][1])
+		fmt.Println(st[1][2], st[1][3])
+	case r1:
+		fmt.Println(1)
+		for i := 0; i < 3; i++ {
+			if st[1][i] != 0 {
+				fmt.Println(b1i, s1i)
 			}
 		}
+	default:
+		fmt.Println(0)
 	}
-
 }

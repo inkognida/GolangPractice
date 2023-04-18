@@ -31,77 +31,86 @@ type Currency struct {
 	Value    string `xml:"Value"`
 }
 
-type CurrencyRate struct {
-	Value float32
+type MaxMinCurrency struct {
+	Value float64
 	Name  string
 	Date  time.Time
 }
 
-type AverageRate struct {
-	Name    string
-	Value   float64
-	Counter int
+type CurrencyRate struct {
+	Value float64
+	Date  time.Time
 }
 
-func MaxMinCurrencyRate(ValCursInfo map[string]ValCurs) (CurrencyRate, CurrencyRate) {
+type CurrencyInfo struct {
+	Name         string
+	AverageValue float64
+	MaxValue     CurrencyRate
+	MinValue     CurrencyRate
+	Counter      int
+}
+
+func MaxMinCurrencyRate(ValCursInfo map[string]ValCurs) (MaxMinCurrency, MaxMinCurrency, map[string]*CurrencyInfo) {
 	maxValue := math.SmallestNonzeroFloat32
 	minValue := math.MaxFloat32
 
-	maxRate := CurrencyRate{}
-	minRate := CurrencyRate{}
+	maxRate := MaxMinCurrency{}
+	minRate := MaxMinCurrency{}
+	currencies := make(map[string]*CurrencyInfo, 0)
+
 	for _, v := range ValCursInfo {
 		for _, c := range v.Currencies {
 			value, _ := strconv.ParseFloat(strings.ReplaceAll(c.Value, ",", "."), 32)
+			t, _ := time.Parse("02.01.2006", v.Date)
+
+			// MAX and MIN currency
 			if value > maxValue {
 				maxValue = value
 
 				maxRate.Name = c.Name
-				maxRate.Value = float32(value)
-				t, _ := time.Parse("02.01.2006", v.Date)
+				maxRate.Value = value
 				maxRate.Date = t
 			}
 			if value < minValue {
 				minValue = value
 
 				minRate.Name = c.Name
-				minRate.Value = float32(value)
-				t, _ := time.Parse("02.01.2006", v.Date)
+				minRate.Value = value
 				minRate.Date = t
 			}
-		}
-	}
-
-	return maxRate, minRate
-}
-
-func AverageRUB(ValCursInfo map[string]ValCurs) []AverageRate {
-	currencies := make(map[string]*AverageRate, 0)
-
-	for _, v := range ValCursInfo {
-		for _, p := range v.Currencies {
-			value, _ := strconv.ParseFloat(strings.ReplaceAll(p.Value, ",", "."), 32)
-			if _, ok := currencies[p.Name]; !ok {
-				currencies[p.Name] = &AverageRate{
-					Name:    p.Name,
-					Value:   value,
+			// MAX and MIN every currency INFO
+			if _, ok := currencies[c.Name]; !ok {
+				currencies[c.Name] = &CurrencyInfo{
+					Name:         c.Name,
+					AverageValue: value,
+					MaxValue: CurrencyRate{
+						Value: value,
+						Date:  t,
+					},
+					MinValue: CurrencyRate{
+						Value: value,
+						Date:  t,
+					},
 					Counter: 1,
 				}
 			} else {
-				currencies[p.Name].Value += value
-				currencies[p.Name].Counter++
+				if value > currencies[c.Name].MaxValue.Value {
+					currencies[c.Name].MaxValue.Value = value
+					currencies[c.Name].MaxValue.Date = t
+				}
+				if value < currencies[c.Name].MinValue.Value {
+					currencies[c.Name].MinValue.Value = value
+					currencies[c.Name].MinValue.Date = t
+				}
+				currencies[c.Name].AverageValue += value
+				currencies[c.Name].Counter++
 			}
 		}
 	}
-
-	curs := make([]AverageRate, 0)
-	for k, v := range currencies {
-		curs = append(curs, AverageRate{
-			Name:  k,
-			Value: v.Value / float64(v.Counter),
-		})
+	for k, _ := range currencies {
+		currencies[k].AverageValue = currencies[k].AverageValue / float64(currencies[k].Counter)
 	}
-
-	return curs
+	return maxRate, minRate, currencies
 }
 
 func CBTask() {
@@ -134,12 +143,11 @@ func CBTask() {
 
 		resp.Body.Close()
 	}
-	max, min := MaxMinCurrencyRate(ValCursInfo)
-	averageRuble := AverageRUB(ValCursInfo)
+	max, min, currencyInfo := MaxMinCurrencyRate(ValCursInfo)
 
 	logger.Println(max, min)
-	for _, v := range averageRuble {
-		logger.Println(v.Name, v.Value)
+	for _, v := range currencyInfo {
+		logger.Println(v.Name, v.MaxValue, v.MinValue, v.AverageValue)
 	}
 }
 
@@ -153,6 +161,14 @@ func main() {
 	// 6:MR
 	// 7:GOTO 5
 
+	// Если допустимо !FLAG
+	// 1: MR
+	// 2: if !FLAG
+	// 3: goto 1
+	// 4: MR
+	// 5: MR
+	// 6: goto 4
+
 	// second task
 	//x = берем шар из ящика ЧБ
 	//Если x черный:
@@ -162,7 +178,11 @@ func main() {
 	//Иначе:
 	//	чб ящик - белые шары
 	//	белый ящик - черные шары
-	//	черный ящик - чб шары
+	//	черный ящик - чб шар
+
+	// Т.к. все надписи заведомо ложны, то - если x черный - ящики Б и Ч не подходят под условие "заведомо ложны" ->
+	// ЧБ ящик содержит черные шары (единственный верный вариант), Б ящик не
+	// содержит черные шары и для него ложно содержание белых -> Б ящик - чб шары. Аналогично если х белый.
 
 	// third task
 	CBTask()

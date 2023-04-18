@@ -21,17 +21,19 @@ func findAllRecipes(recipes []string, ingredients [][]string, supplies []string)
 		}
 	}
 
-	for i, r := range recipes {
-		c := 0
-		for _, ing := range ingredients[i] {
-			if _, ok := sups[ing]; ok {
-				c++
-			} else if _, ok := reps[ing]; ok {
-				c++
+	for _, _ = range recipes {
+		for i, r := range recipes {
+			c := 0
+			for _, ing := range ingredients[i] {
+				if _, ok := sups[ing]; ok {
+					c++
+				} else if _, ok := reps[ing]; ok {
+					c++
+				}
 			}
-		}
-		if c == len(ingredients[i]) {
-			reps[r] = struct{}{}
+			if c == len(ingredients[i]) {
+				reps[r] = struct{}{}
+			}
 		}
 	}
 

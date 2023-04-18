@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
-	"github.com/sirupsen/logrus"
+	logrus "github.com/sirupsen/logrus"
 	"golang.org/x/net/html/charset"
 	"io/ioutil"
 	"math"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -103,17 +104,19 @@ func AverageRUB(ValCursInfo map[string]ValCurs) []AverageRate {
 	return curs
 }
 
-func main() {
+func CBTask() {
 	logger := logrus.New()
 
 	ValCursInfo := make(map[string]ValCurs, 0)
 	now := time.Now()
 	for i := 0; i < 90; i++ {
 		t := now.AddDate(0, 0, -i)
-		url := fmt.Sprintf("http://www.cbr.ru/scripts/XML_daily_eng.asp?date_req=%s", t.Format("02/01/2006"))
+		url := fmt.Sprintf("http://www.cbr.ru/scripts/XML_daily_eng.asp?date_req=%s",
+			t.Format("02/01/2006"))
 		resp, err := http.Get(url)
 		if err != nil {
-			logger.Log(logrus.DebugLevel, err)
+			logger.Log(logrus.FatalLevel, err)
+			os.Exit(1)
 		}
 		logger.Infoln("URL:", url)
 		if _, ok := ValCursInfo[t.Format("02/01/2006")]; !ok {
@@ -133,5 +136,34 @@ func main() {
 	}
 	max, min := MaxMinCurrencyRate(ValCursInfo)
 	averageRuble := AverageRUB(ValCursInfo)
-	logger.Println(max, min, averageRuble)
+
+	logger.Println(max, min)
+	for _, v := range averageRuble {
+		logger.Println(v.Name, v.Value)
+	}
+}
+
+func main() {
+	// first task
+	// 1:MR
+	// 2:IF FLAG
+	// 3:GOTO 5
+	// 4:GOTO 1
+	// 5:MR
+	// 6:MR
+	// 7:GOTO 5
+
+	// second task
+	//x = берем шар из ящика ЧБ
+	//Если x черный:
+	//	чб ящик - черные шары
+	//	белый ящик - чб шары
+	//	черный ящик - белые шары
+	//Иначе:
+	//	чб ящик - белые шары
+	//	белый ящик - черные шары
+	//	черный ящик - чб шары
+
+	// third task
+	CBTask()
 }
